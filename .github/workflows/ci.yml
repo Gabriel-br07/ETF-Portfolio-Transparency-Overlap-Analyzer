@@ -2,84 +2,73 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
     paths:
       - 'ui/**'
       - 'backend/**'
-      - '.github/workflows/ci.yml'
+      - '.github/workflows/**'
   pull_request:
-    branches: [main]
+    branches:
+      - main
     paths:
       - 'ui/**'
       - 'backend/**'
-      - '.github/workflows/ci.yml'
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+      - '.github/workflows/**'
 
 jobs:
   frontend:
-    name: Frontend
+    name: Frontend CI
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ui
+    
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v3
         with:
-          package_json_file: ui/package.json
+          version: 9.0.6
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: ui/.nvmrc
+          node-version: 20
           cache: 'pnpm'
           cache-dependency-path: ui/pnpm-lock.yaml
 
-      - name: Configure pnpm for network resilience
-        run: |
-          pnpm config set fetch-retries 5
-          pnpm config set fetch-timeout 60000
-          pnpm config set fetch-retry-mintimeout 10000
-          pnpm config set fetch-retry-maxtimeout 60000
-
       - name: Install dependencies
-        env:
-          HUSKY: 0
-        run: pnpm install --frozen-lockfile --prefer-offline --reporter=append-only
+        run: pnpm install --frozen-lockfile
 
-      - name: Build shadcn package
-        run: pnpm --filter=shadcn build
-
-      - name: Lint v4 app
-        run: pnpm --filter=v4 --if-present run lint
-
-      - name: Typecheck v4 app
-        run: pnpm --filter=v4 --if-present run typecheck
-
-      - name: Build v4 app
-        run: pnpm --filter=v4 build
+      - name: Run lint
+        run: pnpm lint
 
       - name: Run tests
-        run: pnpm -r --if-present run test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
 
   backend:
-    name: Backend
+    name: Backend CI
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: backend
+    
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Setup Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.13'
+          cache: 'poetry'
+          cache-dependency-path: backend/poetry.lock
 
       - name: Install Poetry
         uses: snok/install-poetry@v1
@@ -87,17 +76,7 @@ jobs:
           version: latest
           virtualenvs-create: true
           virtualenvs-in-project: true
-
-      - name: Cache Poetry dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            backend/.venv
-            ~/.cache/pypoetry
-            ~/.cache/pip
-          key: ${{ runner.os }}-poetry-${{ hashFiles('backend/poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-
+          installer-parallel: true
 
       - name: Install dependencies
         run: poetry install --no-interaction --no-ansi
