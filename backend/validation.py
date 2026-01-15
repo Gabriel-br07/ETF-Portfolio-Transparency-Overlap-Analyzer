@@ -31,13 +31,13 @@ def parse_csv(text):
 
 
 def validate_header(df):
-    excepted = ["symbol", "name", "weight"]
+    expected = ["symbol", "name", "weight"]
     actual = list(df.columns)
-    for col in excepted:
+    for col in expected:
         if col not in actual:
-            raise CSVValidationError(1, "header", f"Coluna obrigaória '{col}' ausente")
+            raise CSVValidationError(1, "header", f"Coluna obrigatória '{col}' ausente")
 
-    extra = [c for c in actual if c not in excepted]
+    extra = [c for c in actual if c not in expected]
     warnings = []
     for c in extra:
         warnings.append(CSVWarning(1, c, f"Coluna extra '{c}' encontrada"))
