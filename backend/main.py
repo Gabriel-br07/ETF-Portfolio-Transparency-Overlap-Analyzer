@@ -21,7 +21,13 @@ async def upload_csv(file: UploadFile = File(...)):
         )
 
     content = await file.read()
-    text = content.decode("utf-8")
+    try:
+        text = content.decode("utf-8")
+    except UnicodeDecodeError:
+        raise HTTPException(
+            status_code=400,
+            detail="Falha ao decodificar o arquivo. Certifique-se de que o CSV esteja em codificação UTF-8 válida.",
+        )
 
     try:
         df, warnings = validation_csv_portifolio(text)
