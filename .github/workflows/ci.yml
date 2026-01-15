@@ -36,7 +36,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version-file: ui/.nvmrc
           cache: 'pnpm'
           cache-dependency-path: ui/pnpm-lock.yaml
 
@@ -52,13 +52,19 @@ jobs:
           HUSKY: 0
         run: pnpm install --frozen-lockfile --prefer-offline --reporter=append-only
 
-      - name: Build workspace
-        run: pnpm -r --if-present run build
+      - name: Build shadcn package
+        run: pnpm --filter=shadcn build
 
-      - name: Lint
-        run: pnpm -r --if-present run lint
+      - name: Lint v4 app
+        run: pnpm --filter=v4 --if-present run lint
 
-      - name: Test
+      - name: Typecheck v4 app
+        run: pnpm --filter=v4 --if-present run typecheck
+
+      - name: Build v4 app
+        run: pnpm --filter=v4 build
+
+      - name: Run tests
         run: pnpm -r --if-present run test
 
   backend:
@@ -74,14 +80,27 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: '3.11'
-          cache: 'poetry'
-          cache-dependency-path: backend/poetry.lock
 
       - name: Install Poetry
         uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            backend/.venv
+            ~/.cache/pypoetry
+            ~/.cache/pip
+          key: ${{ runner.os }}-poetry-${{ hashFiles('backend/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
 
       - name: Install dependencies
-        run: poetry install --no-interaction --no-ansi --no-root
+        run: poetry install --no-interaction --no-ansi
 
       - name: Run tests
         run: poetry run pytest -q
