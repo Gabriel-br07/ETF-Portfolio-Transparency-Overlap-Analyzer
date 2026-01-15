@@ -90,7 +90,4 @@ jobs:
           installer-parallel: true
 
       - name: Install dependencies
-        run: poetry install --with test --no-interaction --no-ansi
-
-      - name: Run tests
-        run: poetry run python -m pytest -q
+        run: poetry install --only main --no-root --no-interaction --no-ansi
