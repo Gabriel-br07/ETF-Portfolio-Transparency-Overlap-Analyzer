@@ -22,9 +22,11 @@ jobs:
           node-version: '18'
           cache: 'pnpm'
           cache-dependency-path: 'ui/pnpm-lock.yaml'
-      - name: Install dependencies (skip scripts)
+      - name: Install dependencies
         working-directory: ui
-        run: pnpm install --frozen-lockfile --ignore-scripts
+        env:
+          HUSKY: 0
+        run: pnpm install --frozen-lockfile
       - name: Build workspace
         working-directory: ui
         run: pnpm -w -r build
